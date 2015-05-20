@@ -142,20 +142,20 @@ ars_LoadQualifier(ctrl,schema,qualstring,displayTag=NULL)
 	{
 		int                ret = 0;
 		ARStatusList       status;
-		ARQualifierStruct *qual;
-		AMALLOCNN(qual, 1, ARQualifierStruct);
+		ARQualifierStruct  qual;
+		Zero(&qual, 1, ARQualifierStruct);
 		Zero(&status, 1, ARStatusList);
 		(void) ARError_reset();
-		ret = ARLoadARQualifierStruct(ctrl, schema, displayTag, qualstring, qual, &status);
+		ret = ARLoadARQualifierStruct(ctrl, schema, displayTag, qualstring, &qual, &status);
 #ifdef PROFILE
 		((ars_ctrl *)ctrl)->queries++;
 #endif
 		if (! ARError( ret, status)) {
-			RETVAL = qual;
+			RETVAL = dup_qualifier(ctrl, &qual);
 		} else {
 			RETVAL = NULL;
-			FreeARQualifierStruct(qual, TRUE);
 		}
+		FreeARQualifierStruct(&qual, FALSE);
 	}
 	OUTPUT:
 	RETVAL
@@ -1493,12 +1493,11 @@ ars_GetActiveLink(ctrl,name)
 	  char            *changeDiary = CPNULL;
 	  ARStatusList     status;
 	  SV              *ref;
-	  ARQualifierStruct *query;
+	  ARQualifierStruct query;
 	  ARDiaryList      diaryList;
 
-	  AMALLOCNN(query,1,ARQualifierStruct);
-
 	  (void) ARError_reset();
+	  Zero(&query, 1, ARQualifierStruct);
 	  Zero(&assignedGroupList, 1, ARInternalIdList);
 	  Zero(&groupList, 1, ARInternalIdList);
 	  Zero(&timestamp, 1, ARTimestamp);
@@ -1518,7 +1517,7 @@ ars_GetActiveLink(ctrl,name)
 #endif
 				&groupList,
 				&executeMask, &controlField, &focusField,
-				&enable, query, &actionList, &elseList, &helpText,
+				&enable, &query, &actionList, &elseList, &helpText,
 				&timestamp, owner, lastChanged, &changeDiary, 
 				&objPropList, /* new in 4.5 */
 #if AR_CURRENT_API_VERSION >= 14
@@ -1558,7 +1557,7 @@ ars_GetActiveLink(ctrl,name)
 		hv_store(RETVAL,  "enable", strlen("enable") , newSViv(enable), 0);
 		/* a bit of a hack -- makes blessed reference to qualifier */
 		ref = newSViv(0);
-		sv_setref_pv(ref, "ARQualifierStructPtr", (void*)query);
+		sv_setref_pv(ref, "ARQualifierStructPtr", (void*)dup_qualifier(ctrl, &query));
 		hv_store(RETVAL,  "query", strlen("query") , ref, 0);
 		hv_store(RETVAL,  "actionList", strlen("actionList") ,
 		     perl_ARList(ctrl, 
@@ -1585,6 +1584,7 @@ ars_GetActiveLink(ctrl,name)
 				FreeARDiaryList(&diaryList, FALSE);
 			}
 	    }
+	    FreeARQualifierStruct(&query, FALSE);
 	    FreeARInternalIdList(&groupList,FALSE);
 	    FreeARActiveLinkActionList(&actionList,FALSE);
 	    FreeARActiveLinkActionList(&elseList,FALSE);
@@ -3320,7 +3320,7 @@ ars_GetEscalation(ctrl, name)
       char                *changeDiary = CPNULL;
 	  SV                  *ref;
 	  int                  ret;
-	  ARQualifierStruct   *query = MALLOCNN(sizeof(ARQualifierStruct));
+		ARQualifierStruct    query;
 	  ARDiaryList          diaryList;
 	  ARWorkflowConnectStruct schemaList;
 	  ARPropList              objPropList;
@@ -3337,9 +3337,10 @@ ars_GetEscalation(ctrl, name)
 	  Zero(&elseList, 1,ARFilterActionList);
 	  Zero(&schemaList, 1, ARWorkflowConnectStruct);
 	  Zero(&objPropList, 1, ARPropList);
+	  Zero(&query, 1, ARQualifierStruct);
 
 	  ret = ARGetEscalation(ctrl, name, &escalationTm, &schemaList, &enable,
-			query, &actionList, &elseList, &helpText, &timestamp,
+			&query, &actionList, &elseList, &helpText, &timestamp,
 			owner, lastChanged, &changeDiary, &objPropList, &status);
 #ifdef PROFILE
 	  ((ars_ctrl *)ctrl)->queries++;
@@ -3370,7 +3371,7 @@ ars_GetEscalation(ctrl, name)
 				}
 			}
 			ref = newSViv(0);
-			sv_setref_pv(ref, "ARQualifierStructPtr", (void *)query);
+			sv_setref_pv(ref, "ARQualifierStructPtr", (void *)dup_qualifier(ctrl, &query));
 			hv_store(RETVAL,  "query", strlen("query") , ref, 0);
 			hv_store(RETVAL,  "actionList", strlen("actionList") ,
 				perl_ARList(ctrl,
@@ -8261,6 +8262,5 @@ DESTROY(qual)
 	CODE:
 	{
 		DBG( ("arqualifierstruct destructor (%p)\n", qual) );
-		FreeARQualifierStruct(qual, FALSE);
-		AP_FREE(qual);
+		free_qualifier(qual, TRUE);
 	}
