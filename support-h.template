@@ -400,6 +400,7 @@ EXTERN SV *perl_AREnumLimitsStruct(ARControlStruct * ctrl, AREnumLimitsStruct * 
 #endif
 #if AR_EXPORT_VERSION >= 7L
 EXTERN void dup_ARFuncCurrencyList(ARFuncCurrencyList *dst, ARFuncCurrencyList *src);
+EXTERN void free_ARFuncCurrencyList(ARFuncCurrencyList *, ARBoolean);
 EXTERN ARCurrencyStruct *dup_ARCurrencyStruct(ARControlStruct * ctrl, ARCurrencyStruct * in);
 EXTERN SV *perl_ARFuncCurrencyStruct(ARControlStruct * ctrl, ARFuncCurrencyStruct * in);
 EXTERN SV *perl_ARCurrencyPartStruct(ARControlStruct *ctrl, ARCurrencyPartStruct *);
@@ -439,6 +440,7 @@ EXTERN SV *perl_ARFieldLimitStruct(ARControlStruct *ctrl,  ARFieldLimitStruct *)
 EXTERN SV *perl_ARFunctionAssignStruct(ARControlStruct *ctrl, 
 					 ARFunctionAssignStruct *);
 EXTERN SV *perl_ARArithOpAssignStruct(ARControlStruct *ctrl,  ARArithOpAssignStruct *);
+
 EXTERN void dup_Value(ARControlStruct *ctrl,  ARValueStruct *, ARValueStruct *);
 EXTERN ARArithOpStruct *dup_ArithOp(ARControlStruct *ctrl,  ARArithOpStruct *);
 EXTERN void dup_ValueList(ARControlStruct *ctrl,  ARValueList *, ARValueList *);
@@ -452,6 +454,18 @@ EXTERN ARQualifierStruct *dup_qualifier(ARControlStruct *ctrl,  ARQualifierStruc
 EXTERN ARQualifierStruct *dup_qualifier2(ARControlStruct *ctrl, 
 					 ARQualifierStruct *in, 
 					 ARQualifierStruct *out, int level);
+
+/* routines to free structures cloned by arsperl */
+EXTERN void free_ARArithOpStruct(ARArithOpStruct*, ARBoolean);
+EXTERN void free_ARByteList(ARByteList*, ARBoolean);
+EXTERN void free_ARCoordList(ARCoordList*, ARBoolean);
+EXTERN void free_ARQueryValueStruct(ARQueryValueStruct*, ARBoolean);
+EXTERN void free_ARValueList(ARValueList*, ARBoolean);
+EXTERN void free_ARValueStruct(ARValueStruct*, ARBoolean);
+EXTERN void free_FieldValueOrArith(ARFieldValueOrArithStruct*, ARBoolean);
+EXTERN void free_qualifier(ARQualifierStruct*, ARBoolean);
+EXTERN void free_RelOp(ARRelOpStruct*, ARBoolean);
+
 EXTERN SV *perl_ARArithOpStruct(ARControlStruct *ctrl,  ARArithOpStruct *);
 EXTERN SV *perl_ARQueryValueStruct(ARControlStruct *ctrl,  ARQueryValueStruct *);
 EXTERN SV *perl_ARFieldValueOrArithStruct( ARControlStruct *ctrl,

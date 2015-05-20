@@ -537,6 +537,17 @@ dup_ARCoordList(ARControlStruct * ctrl, ARCoordList * in)
 	return NULL;
 }
 
+void free_ARCoordList(ARCoordList *coordList, ARBoolean freeStruct)
+{
+	if (coordList == NULL) return;
+
+	if (coordList->coords)
+		AP_FREE(coordList->coords);
+
+	if (freeStruct)
+		AP_FREE(coordList);
+}
+
 ARByteList *
 dup_ARByteList(ARControlStruct * ctrl, ARByteList * in) 
 {
@@ -557,6 +568,17 @@ dup_ARByteList(ARControlStruct * ctrl, ARByteList * in)
 		return n;
 	}
 	return NULL;
+}
+
+void free_ARByteList(ARByteList *byteList, ARBoolean freeStruct)
+{
+	if (byteList == NULL) return;
+
+	if (byteList->bytes != NULL)
+		AP_FREE(byteList->bytes);
+
+	if (freeStruct)
+		AP_FREE(byteList);
 }
 
 #if AR_EXPORT_VERSION >= 6
@@ -653,6 +675,17 @@ dup_ARFuncCurrencyList(ARFuncCurrencyList *dst, ARFuncCurrencyList *src)
 	}
 }
 
+void free_ARFuncCurrencyList(ARFuncCurrencyList *funcCurrencyList, ARBoolean freeStruct)
+{
+	if (funcCurrencyList == NULL) return;
+
+	if (funcCurrencyList->funcCurrencyList)
+		AP_FREE(funcCurrencyList->funcCurrencyList);
+
+	if (freeStruct)
+		AP_FREE(funcCurrencyList);
+}
+
 ARCurrencyStruct *
 dup_ARCurrencyStruct(ARControlStruct * ctrl, ARCurrencyStruct * in)
 {
@@ -667,6 +700,16 @@ dup_ARCurrencyStruct(ARControlStruct * ctrl, ARCurrencyStruct * in)
 		dup_ARFuncCurrencyList(&(n->funcList), &(in->funcList));
 	}
 	return NULL;
+}
+
+void free_ARCurrencyStruct(ARCurrencyStruct *currencyStruct, ARBoolean freeStruct)
+{
+	if (currencyStruct == NULL) return;
+
+	free_ARFuncCurrencyList(&currencyStruct->funcList, FALSE);
+
+	if (freeStruct)
+		AP_FREE(currencyStruct);
 }
 
 SV             *
@@ -3068,6 +3111,44 @@ dup_Value(ARControlStruct * ctrl, ARValueStruct * n, ARValueStruct * in)
 	}
 }
 
+void
+free_ARValueStruct(ARValueStruct *valueStruct, ARBoolean freeStruct)
+{
+	if (valueStruct == NULL) return;
+
+	switch (valueStruct->dataType) {
+	case AR_DATA_TYPE_NULL:
+	case AR_DATA_TYPE_KEYWORD:
+	case AR_DATA_TYPE_INTEGER:
+	case AR_DATA_TYPE_REAL:
+	case AR_DATA_TYPE_TIME:
+	case AR_DATA_TYPE_BITMASK:
+	case AR_DATA_TYPE_ENUM:
+	case AR_DATA_TYPE_ULONG:
+		break;
+#if AR_EXPORT_VERSION > 6L
+	case AR_DATA_TYPE_DATE:
+		break;
+	case AR_DATA_TYPE_CURRENCY:
+		free_ARCurrencyStruct(valueStruct->u.currencyVal, TRUE);
+		break;
+#endif
+	case AR_DATA_TYPE_CHAR:
+	case AR_DATA_TYPE_DECIMAL:
+	case AR_DATA_TYPE_DIARY:
+		AP_FREE(valueStruct->u.charVal);
+		break;
+	case AR_DATA_TYPE_COORDS:
+		free_ARCoordList(valueStruct->u.coordListVal, TRUE);
+		break;
+	case AR_DATA_TYPE_BYTES:
+		free_ARByteList(valueStruct->u.byteListVal, TRUE);
+		break;
+	}
+
+	if (freeStruct) AP_FREE(valueStruct);
+}
+
 ARArithOpStruct *
 dup_ArithOp(ARControlStruct * ctrl, ARArithOpStruct * in)
 {
@@ -3082,6 +3163,14 @@ dup_ArithOp(ARControlStruct * ctrl, ARArithOpStruct * in)
 	return n;
 }
 
+void free_ARArithOpStruct(ARArithOpStruct *arithOpStruct, ARBoolean freeStruct)
+{
+	if (arithOpStruct == NULL) return;
+	free_FieldValueOrArith(&arithOpStruct->operandLeft, FALSE);
+	free_FieldValueOrArith(&arithOpStruct->operandRight, FALSE);
+	if (freeStruct) AP_FREE(arithOpStruct);
+}
+
 void
 dup_ValueList(ARControlStruct * ctrl, ARValueList * n, ARValueList * in)
 {
@@ -3091,6 +3180,22 @@ dup_ValueList(ARControlStruct * ctrl, ARValueList * n, ARValueList * in)
 	n->valueList = MALLOCNN(sizeof(ARValueStruct) * in->numItems);
 	for (i = 0; i < in->numItems; i++)
 		dup_Value(ctrl, &n->valueList[0], &in->valueList[0]);
+}
+
+void free_ARValueList(ARValueList *valueList, ARBoolean freeStruct)
+{
+	unsigned int i;
+
+	if (valueList == NULL) return;
+	
+	for (i = 0; i < valueList->numItems; i++)
+		free_ARValueStruct(&valueList->valueList[i], FALSE);
+
+	if (valueList->valueList != NULL)
+		AP_FREE(valueList->valueList);
+
+	if (freeStruct)
+		AP_FREE(valueList);
 }
 
 ARQueryValueStruct *
@@ -3107,6 +3212,17 @@ dup_QueryValue(ARControlStruct * ctrl, ARQueryValueStruct * in)
 	n->valueField = in->valueField;
 	n->multiMatchCode = in->multiMatchCode;
 	return n;
+}
+
+void free_ARQueryValueStruct(ARQueryValueStruct *queryValueStruct, ARBoolean freeStruct)
+{
+	if (queryValueStruct == NULL) return;
+
+	if (queryValueStruct->qualifier != NULL)
+		free_qualifier(queryValueStruct->qualifier, TRUE);
+
+	if (freeStruct)
+		AP_FREE(queryValueStruct);
 }
 
 void
@@ -3144,6 +3260,37 @@ dup_FieldValueOrArith(ARControlStruct * ctrl,
 	}
 }
 
+void free_FieldValueOrArith(ARFieldValueOrArithStruct *fieldValOrArith, ARBoolean freeStruct)
+{
+	if (fieldValOrArith == NULL) return;
+
+	switch (fieldValOrArith->tag) {
+	case AR_VALUE:
+		free_ARValueStruct(&fieldValOrArith->u.value, FALSE);
+		break;
+	case AR_ARITHMETIC:
+		free_ARArithOpStruct(fieldValOrArith->u.arithOp, TRUE);
+		break;
+	case AR_VALUE_SET:
+		free_ARValueList(&fieldValOrArith->u.valueSet, FALSE);
+		break;
+	case AR_QUERY:
+		free_ARQueryValueStruct(fieldValOrArith->u.queryValue, TRUE);
+		break;
+	/* no actions to take for ...
+	case AR_FIELD_CURRENT:
+	case AR_FIELD_TRAN:
+	case AR_FIELD_DB:
+	case AR_FIELD:
+	case AR_LOCAL_VARIABLE:
+	case AR_STAT_HISTORY:
+		break;
+	*/
+	}
+
+	if (freeStruct) AP_FREE(fieldValOrArith);
+}
+
 ARRelOpStruct  *
 dup_RelOp(ARControlStruct * ctrl, ARRelOpStruct * in)
 {
@@ -3156,6 +3303,15 @@ dup_RelOp(ARControlStruct * ctrl, ARRelOpStruct * in)
 	dup_FieldValueOrArith(ctrl, &n->operandLeft, &in->operandLeft);
 	dup_FieldValueOrArith(ctrl, &n->operandRight, &in->operandRight);
 	return n;
+}
+
+void 
+free_RelOp(ARRelOpStruct *relOp, ARBoolean freeStruct)
+{
+	if (relOp == NULL) return;
+	free_FieldValueOrArith(&relOp->operandLeft, FALSE);
+	free_FieldValueOrArith(&relOp->operandRight, FALSE);
+	if (freeStruct) AP_FREE(relOp);
 }
 
 /* Performs a deep copy of ARQualifierStruct. It assumes the target 
@@ -3211,6 +3367,36 @@ dup_qualifier(ARControlStruct * ctrl, ARQualifierStruct * in)
 		return NULL;
 	}
 	return out;
+}
+
+
+void
+free_qualifier(ARQualifierStruct* qualifier, ARBoolean freeStruct)
+{
+	if (qualifier == NULL) return;
+
+	switch (qualifier->operation) {
+	case AR_COND_OP_AND:
+	case AR_COND_OP_OR:
+		free_qualifier(qualifier->u.andor.operandLeft, TRUE);
+		free_qualifier(qualifier->u.andor.operandRight, TRUE);
+		break;
+	case AR_COND_OP_NOT:
+		free_qualifier(qualifier->u.not, TRUE);
+		break;
+	case AR_COND_OP_REL_OP:
+		free_RelOp(qualifier->u.relOp, TRUE);
+		break;
+	/* no actions to take for ...
+	case AR_COND_OP_FROM_FIELD:
+	case AR_COND_OP_NONE:
+		break;
+	*/
+	}
+
+	if (freeStruct) {
+		AP_FREE(qualifier);
+	}
 }
 
 SV             *
