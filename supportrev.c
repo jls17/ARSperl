@@ -1814,7 +1814,7 @@ rev_ARAssignFieldStruct_helper(ARControlStruct * ctrl, HV * h, ARAssignFieldStru
 		if (sv_derived_from(*qpsv, "ARQualifierStructPtr")) {
 			qp = (ARQualifierStruct *) SvIV((SV *) SvRV(*qpsv));
 
-			if (dup_qualifier2(ctrl, qp, &(m->qualifier), 0) != (ARQualifierStruct *) NULL) {
+			if (dup_qualifier_to(ctrl, qp, &(m->qualifier))) {
 				return 0;
 			}else{
 				ARError_add(AR_RETURN_ERROR, AP_ERR_GENERAL,

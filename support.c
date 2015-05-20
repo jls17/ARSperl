@@ -3158,78 +3158,59 @@ dup_RelOp(ARControlStruct * ctrl, ARRelOpStruct * in)
 	return n;
 }
 
-/* assumes qual struct is pre-allocated. if level > 0 then out is
- * ignored and a new qual struct is allocated, else out is used instead
- * of allocating a new struct
+/* Performs a deep copy of ARQualifierStruct. It assumes the target 
+   qual struct is pre-allocated (out parameter).
  */
 
 ARQualifierStruct *
-dup_qualifier2(ARControlStruct * ctrl, ARQualifierStruct * in,
-	       ARQualifierStruct * out, int level)
+dup_qualifier_to(ARControlStruct * ctrl, ARQualifierStruct * in,
+	       ARQualifierStruct * out)
 {
 	ARQualifierStruct *n;
 
 	if (!in || !out) {
 		return (ARQualifierStruct *) NULL;
 	}
-	if (level > 0) {
-		n = MALLOCNN(sizeof(ARQualifierStruct));
-	} else {
-		n = out;
-	}
 
-	n->operation = in->operation;
+	out->operation = in->operation;
 
 	switch (in->operation) {
 	case AR_COND_OP_AND:
 	case AR_COND_OP_OR:
-		n->u.andor.operandLeft = dup_qualifier2(ctrl,
-					   in->u.andor.operandLeft, out, 1);
-		n->u.andor.operandRight = dup_qualifier2(ctrl,
-					  in->u.andor.operandRight, out, 1);
+		out->u.andor.operandLeft = dup_qualifier(ctrl, in->u.andor.operandLeft);
+		out->u.andor.operandRight = dup_qualifier(ctrl, in->u.andor.operandRight);
 		break;
 	case AR_COND_OP_NOT:
-		n->u.not = dup_qualifier2(ctrl, in->u.not, out, 1);
+		out->u.not = dup_qualifier(ctrl, in->u.not);
 		break;
 	case AR_COND_OP_REL_OP:
-		n->u.relOp = dup_RelOp(ctrl, in->u.relOp);
+		out->u.relOp = dup_RelOp(ctrl, in->u.relOp);
 		break;
 	case AR_COND_OP_FROM_FIELD:
-		n->u.fieldId = in->u.fieldId;
+		out->u.fieldId = in->u.fieldId;
 		break;
 	case AR_COND_OP_NONE:
 		break;
 	}
-	return n;
+	return out;
 }
 
-/* assumes qual struct is not pre-allocated */
+/* Performs a deep copy of ARQualifierStruct. It allocates a new
+   QualifierStruct as well. */
 
 ARQualifierStruct *
 dup_qualifier(ARControlStruct * ctrl, ARQualifierStruct * in)
 {
-	ARQualifierStruct *n;
+	ARQualifierStruct *out;
 
 	if (!in)
 		return NULL;
-	n = MALLOCNN(sizeof(ARQualifierStruct));
-	n->operation = in->operation;
-	switch (in->operation) {
-	case AR_COND_OP_AND:
-	case AR_COND_OP_OR:
-		n->u.andor.operandLeft = dup_qualifier(ctrl, in->u.andor.operandLeft);
-		n->u.andor.operandRight = dup_qualifier(ctrl, in->u.andor.operandRight);
-		break;
-	case AR_COND_OP_NOT:
-		n->u.not = dup_qualifier(ctrl, in->u.not);
-		break;
-	case AR_COND_OP_REL_OP:
-		n->u.relOp = dup_RelOp(ctrl, in->u.relOp);
-		break;
-	case AR_COND_OP_NONE:
-		break;
+	out = MALLOCNN(sizeof(ARQualifierStruct));
+	if (!dup_qualifier_to(ctrl, in, out)) {
+		AP_FREE(out);
+		return NULL;
 	}
-	return n;
+	return out;
 }
 
 SV             *
