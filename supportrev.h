@@ -116,6 +116,10 @@ EXTERN int strcasecmp(char *s1, char *s2);
 
 EXTERN int strncasecmp(char *s1, char *s2, size_t n);
 
+#endif /* def _WIN32 */
+
+#if defined(_WIN32) 
+
 EXTERN char* arsperl_strdup( char *s1 );
 
 #define strdup arsperl_strdup

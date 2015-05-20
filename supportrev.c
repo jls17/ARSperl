@@ -2701,6 +2701,9 @@ strncasecmp(char *s1, char *s2, size_t n)
 	return (i == n)? 0 : *p1 - *p2;
 }
 
+#endif
+
+#if defined(_WIN32)
 char*
 arsperl_strdup( char *s1 ){
 	char *p1;
