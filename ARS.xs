@@ -3344,75 +3344,76 @@ ars_GetEscalation(ctrl, name)
 #ifdef PROFILE
 	  ((ars_ctrl *)ctrl)->queries++;
 #endif
-	  if(!ARError( ret, status)) {
-	  	  RETVAL = newHV();
-	  sv_2mortal( (SV*) RETVAL );
-	     hv_store(RETVAL,  "name", strlen("name") , newSVpv(name, 0), 0);
-		hv_store(RETVAL,  "schemaList", strlen("schemaList") , /* WorkflowConnectStruct */
-			perl_ARNameList(ctrl, schemaList.u.schemaList), 0);
-		hv_store(RETVAL,  "objPropList", strlen("objPropList") ,
-			perl_ARPropList(ctrl, &objPropList), 0);
-	     hv_store(RETVAL,  "enable", strlen("enable") , newSViv(enable), 0);
-	     hv_store(RETVAL,  "timestamp", strlen("timestamp") , newSViv(timestamp), 0);
-	     if(helpText)
-	        hv_store(RETVAL,  "helpText", strlen("helpText") , newSVpv(helpText, 0), 0);
-	     hv_store(RETVAL,  "owner", strlen("owner") , newSVpv(owner, 0), 0);
-	     hv_store(RETVAL,  "lastChanged", strlen("lastChanged") , newSVpv(lastChanged, 0), 0);
-	     if (changeDiary) {
-		ret = ARDecodeDiary(ctrl, changeDiary, &diaryList, &status);
-		if (!ARError(ret, status)) {
-			hv_store(RETVAL,  "changeDiary", strlen("changeDiary") ,
-				perl_ARList(ctrl, 
-				(ARList *)&diaryList,
-				(ARS_fn)perl_diary,
-				sizeof(ARDiaryStruct)), 0);
-			FreeARDiaryList(&diaryList, FALSE);
+		if(!ARError( ret, status)) {
+			RETVAL = newHV();
+			sv_2mortal( (SV*) RETVAL );
+			hv_store(RETVAL, "name", strlen("name") , newSVpv(name, 0), 0);
+			hv_store(RETVAL, "schemaList", strlen("schemaList") , /* WorkflowConnectStruct */
+					perl_ARNameList(ctrl, schemaList.u.schemaList), 0);
+			hv_store(RETVAL,  "objPropList", strlen("objPropList") ,
+					perl_ARPropList(ctrl, &objPropList), 0);
+			hv_store(RETVAL,  "enable", strlen("enable") , newSViv(enable), 0);
+			hv_store(RETVAL,  "timestamp", strlen("timestamp") , newSViv(timestamp), 0);
+			if(helpText)
+				hv_store(RETVAL,  "helpText", strlen("helpText") , newSVpv(helpText, 0), 0);
+			hv_store(RETVAL,  "owner", strlen("owner") , newSVpv(owner, 0), 0);
+			hv_store(RETVAL,  "lastChanged", strlen("lastChanged") , newSVpv(lastChanged, 0), 0);
+			if (changeDiary) {
+				ret = ARDecodeDiary(ctrl, changeDiary, &diaryList, &status);
+				if (!ARError(ret, status)) {
+					hv_store(RETVAL,  "changeDiary", strlen("changeDiary") ,
+						perl_ARList(ctrl, 
+						(ARList *)&diaryList,
+						(ARS_fn)perl_diary,
+						sizeof(ARDiaryStruct)), 0);
+					FreeARDiaryList(&diaryList, FALSE);
+				}
+			}
+			ref = newSViv(0);
+			sv_setref_pv(ref, "ARQualifierStructPtr", (void *)query);
+			hv_store(RETVAL,  "query", strlen("query") , ref, 0);
+			hv_store(RETVAL,  "actionList", strlen("actionList") ,
+				perl_ARList(ctrl,
+					(ARList *)&actionList,
+					(ARS_fn)perl_ARFilterActionStruct,
+					sizeof(ARFilterActionStruct)), 0);
+			hv_store(RETVAL,  "elseList", strlen("elseList") , 
+				perl_ARList( ctrl,
+					(ARList *)&elseList,
+					(ARS_fn)perl_ARFilterActionStruct,
+					sizeof(ARFilterActionStruct)), 0);
+			hv_store(RETVAL,  "TmType", strlen("TmType") , 
+				newSViv(escalationTm.escalationTmType), 0);
+			switch(escalationTm.escalationTmType) {
+			case AR_ESCALATION_TYPE_INTERVAL:
+				hv_store(RETVAL,  "TmInterval", strlen("TmInterval") , 
+					newSViv(escalationTm.u.interval), 0);
+				break;
+			case AR_ESCALATION_TYPE_TIMEMARK:
+				hv_store(RETVAL,  "TmMonthDayMask", strlen("TmMonthDayMask") ,
+					newSViv(escalationTm.u.date.monthday), 0);
+				hv_store(RETVAL,  "TmWeekDayMask", strlen("TmWeekDayMask") ,
+					newSViv(escalationTm.u.date.weekday), 0);
+				hv_store(RETVAL,  "TmHourMask", strlen("TmHourMask") ,
+					newSViv(escalationTm.u.date.hourmask), 0);
+				hv_store(RETVAL,  "TmMinute", strlen("TmMinute") ,
+					newSViv(escalationTm.u.date.minute), 0);
+				break;
+			}
+			FreeARFilterActionList(&actionList, FALSE);
+			FreeARFilterActionList(&elseList, FALSE);
+			FreeARWorkflowConnectStruct(&schemaList, FALSE);
+			FreeARPropList(&objPropList, FALSE);
+			FreeARQualifierStruct(&query, FALSE);
+			if(helpText) {
+				arsperl_FreeARTextString(helpText);
+			}
+			if(changeDiary) {
+				arsperl_FreeARTextString(changeDiary);
+			}
+		}else{
+			XSRETURN_UNDEF;
 		}
-	     }
-	     ref = newSViv(0);
-	     sv_setref_pv(ref, "ARQualifierStructPtr", (void *)query);
-	     hv_store(RETVAL,  "query", strlen("query") , ref, 0);
-	     hv_store(RETVAL,  "actionList", strlen("actionList") ,
-			perl_ARList(ctrl,
-				(ARList *)&actionList,
-				(ARS_fn)perl_ARFilterActionStruct,
-				sizeof(ARFilterActionStruct)), 0);
-	     hv_store(RETVAL,  "elseList", strlen("elseList") , 
-			perl_ARList( ctrl,
-				(ARList *)&elseList,
-				(ARS_fn)perl_ARFilterActionStruct,
-				sizeof(ARFilterActionStruct)), 0);
-	     hv_store(RETVAL,  "TmType", strlen("TmType") , 
-			newSViv(escalationTm.escalationTmType), 0);
-	     switch(escalationTm.escalationTmType) {
-	     case AR_ESCALATION_TYPE_INTERVAL:
-		hv_store(RETVAL,  "TmInterval", strlen("TmInterval") , 
-			newSViv(escalationTm.u.interval), 0);
-		break;
-	     case AR_ESCALATION_TYPE_TIMEMARK:
-		hv_store(RETVAL,  "TmMonthDayMask", strlen("TmMonthDayMask") ,
-			newSViv(escalationTm.u.date.monthday), 0);
-		hv_store(RETVAL,  "TmWeekDayMask", strlen("TmWeekDayMask") ,
-			newSViv(escalationTm.u.date.weekday), 0);
-		hv_store(RETVAL,  "TmHourMask", strlen("TmHourMask") ,
-			newSViv(escalationTm.u.date.hourmask), 0);
-		hv_store(RETVAL,  "TmMinute", strlen("TmMinute") ,
-			newSViv(escalationTm.u.date.minute), 0);
-		break;
-	     }
-	     FreeARFilterActionList(&actionList, FALSE);
-	     FreeARFilterActionList(&elseList, FALSE);
-	     FreeARWorkflowConnectStruct(&schemaList, FALSE);
-	     FreeARPropList(&objPropList, FALSE);
-	     if(helpText) {
-	       	arsperl_FreeARTextString(helpText);
-	     }
-	     if(changeDiary) {
-	       	arsperl_FreeARTextString(changeDiary);
-	     }
-	  }else{
-	   XSRETURN_UNDEF;
-	  }
 	}
 	OUTPUT:
 	RETVAL
