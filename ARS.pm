@@ -502,7 +502,7 @@ sub ars_SwitchToBestPracticeMode {
 
 # call ARInitialization
 ARS::__ars_init() if(&ARS::ars_APIVersion() < 4);
-
+ARS::__init();
 
 1;
 __END__

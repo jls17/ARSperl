@@ -202,6 +202,16 @@ __ars_init()
 #endif
 	}
 
+void
+__init()
+	CODE :
+	{
+#ifdef WIN32
+		InitARAPIMemoryFunctions();
+#endif
+	}
+
+
 int
 ars_APIVersion()
 	CODE:

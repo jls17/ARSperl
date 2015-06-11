@@ -43,6 +43,10 @@ $header: /u1/project/ARSperl/ARSperl/RCS/support.c,v 1.25 1999/01/04 21:04:27 jc
  #undef free
 #endif
 
+#ifdef WIN32
+FUNC_ARAPI_MALLOC fnARAPImalloc;
+FUNC_ARAPI_FREE fnARAPIfree;
+#endif
 
 int
 compmem(MEMCAST * m1, MEMCAST * m2, int size)
@@ -5016,4 +5020,86 @@ void arsperl_FreeARTextString(char* buf)
 	FreeARLocStruct(&ls, FALSE);
 }
 
+#ifdef WIN32
+void InitARAPIMemoryFunctions()
+{
+	// just as a workarround, till we have changed Makefile.PL
+	#define ARAPIx64
 
+	#ifdef ARAPIx64
+	#define ARAPI_C_RUNTIME "msvcr90"
+	#else
+	#define ARAPI_C_RUNTIME "msvcr71"
+	#endif
+	HMODULE rt;
+
+	//printf("__InitARAPIMemoryFunctions\n");
+	rt = GetModuleHandle(ARAPI_C_RUNTIME);
+	//printf("after:GetModuleHanlde\n");
+	if (rt == NULL)
+	{
+		printf("Failed to load ARAPI c-runtime! Module %s not found.\n", ARAPI_C_RUNTIME);
+		return;
+	}
+	//printf("found module %lx\n", rt);
+
+	fnARAPImalloc = (FUNC_ARAPI_MALLOC)GetProcAddress(rt, "malloc");
+	fnARAPIfree = (FUNC_ARAPI_FREE)GetProcAddress(rt, "free");
+
+	if (!fnARAPImalloc)
+	{
+		fprintf(stderr, "Failed to get ARAPI-malloc function: %d\n", GetLastError());
+	}
+	if (!fnARAPImalloc)
+	{
+		fprintf(stderr, "Failed to get ARAPI-free function: %d\n", GetLastError());
+	}
+
+	if (!fnARAPImalloc || !fnARAPIfree)
+	{
+		// we can't mix malloc/free calls to different c-runtimes, so if we cant get the address of 
+		// any of the functions, we set both to perl internal functions
+		fnARAPImalloc = safemalloc;
+		fnARAPIfree = safefree;
+	}
+
+	/* Testcode to verify it is working! */
+	/*
+	{
+		ARControlStruct ctrl;
+		ARStatusList status;
+
+	
+		ARStatusStruct *memPtr;
+		ARStatusStruct *mem;
+
+		memset(&ctrl, 0, sizeof(ARControlStruct));
+		memset(&status, 0, sizeof(ARStatusList));
+
+		//ARInitialization(&ctrl, &status);
+
+		printf("first test shouldn't crash...");
+		// ARAPI malloc shouldn't crash at all
+		memPtr = ARAPI_MALLOC(ARStatusStruct);
+		memset(memPtr, 0, sizeof(ARStatusStruct));
+
+		status.statusList = (ARStatusStruct*)memPtr;
+		status.numItems = 1;
+
+		FreeARStatusList(&status, FALSE);   // <---- if we used the wrong malloc, this might crash, at least it could corrupt the heap
+		printf(" done\n");
+
+		printf("second test crash expected...");
+		// internal malloc will crash if the runtimes are different
+		mem = (ARStatusStruct*)malloc(sizeof(ARStatusStruct));
+		memset(mem, 0, sizeof(ARStatusStruct));
+
+		status.statusList = mem;
+		status.numItems = 1;
+
+		FreeARStatusList(&status, FALSE);   // <---- crashing here is expected!
+		printf(" done");
+	}
+	*/
+}
+#endif

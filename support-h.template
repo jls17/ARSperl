@@ -354,6 +354,14 @@ EXTERN unsigned int  caseLookUpTypeNumber(TypeMapStruct *t, char *s);
 /* typedef SV* (*ARS_fn)(void *); */
 typedef void *(*ARS_fn)(ARControlStruct *ctrl, void *b);
 
+#ifdef WIN32
+typedef void *(*FUNC_ARAPI_MALLOC)(size_t size);
+typedef void  (*FUNC_ARAPI_FREE)(void *ptr);
+
+EXTERN FUNC_ARAPI_MALLOC fnARAPImalloc;
+EXTERN FUNC_ARAPI_FREE fnARAPIfree;
+#endif
+
 EXTERN FILE* get_logging_file_ptr();
 EXTERN void  set_logging_file_ptr( FILE* );
 
@@ -362,6 +370,10 @@ EXTERN void        *debug_mallocnn(int s, char *file, char *func, int line);
 EXTERN void         debug_free(void *p, char *file, char *func, int line);
 EXTERN unsigned int strsrch(register char *s, register char c);
 EXTERN char        *strappend(char *b, char *a);
+
+#ifdef WIN32
+EXTERN void         InitARAPIMemoryFunctions();
+#endif
 
 EXTERN int          ARError_reset();
 EXTERN int          ARError_add( int type, long num, char *text);
@@ -611,9 +623,15 @@ void arsperl_FreeARTextString(char* buf);
 #ifndef ARSPERL_MALLOCDEBUG
 # define AMALLOCNN(DST,SIZE,TYPE) { DST = (TYPE *)mallocnn(SIZE * sizeof(TYPE)); }
 # define MALLOCNN(X) mallocnn(X) 
+# ifdef WIN32
+#  define ARAPI_MALLOC(TYPE) ((TYPE*)fnARAPImalloc(sizeof(TYPE)))
+# else
+#  define ARAPI_MALLOC(TYPE) ((TYPE*))mallocnn(sizeof(TYPE)))
+# endif
 #else /* we want to debug memory allocations */
 # define AMALLOCNN(DST,SIZE,TYPE) { DST = (TYPE *)debug_mallocnn(SIZE * sizeof(TYPE), __FILE__, __FUNCTION__, __LINE__); }
 # define MALLOCNN(X) debug_mallocnn(X, __FILE__, __FUNCTION__, __LINE__) 
+# define ARAPI_MALLOC(TYPE) ((TYPE*)debug_arapi_malloc(sizeof(TYPE)))
 #endif /* malloc debugging */
 
 #ifndef ARSPERL_FREEDEBUG
