@@ -81,7 +81,13 @@ copymem(MEMCAST * m1, MEMCAST * m2, int size)
 void           *
 mallocnn(int s)
 {
-	void           *m = malloc(s ? s : 1);
+#ifdef WIN32
+#define MALLOC ARAPI_MALLOC
+#else
+#define MALLOC malloc
+#endif
+
+	void           *m = MALLOC(s ? s : 1);
 
 	if (!m)
 		croak("can't malloc");
@@ -104,11 +110,17 @@ debug_mallocnn(int s, char *file, char *func, int line)
 void
 debug_free(void *p, char *file, char *func, int line)
 {
+#ifdef WIN32
+#define OUR_FREE ARAPI_FREE
+#else
+#define OUR_FREE free
+#endif
+
 	printf("free(0x%X) called from %s::%s(), line %d\n", (unsigned long) p,
 	       file ? file : "UNKNOWN",
 	       func ? func : "UNKNOWN",
 	       line);
-	free(p);
+	OUR_FREE(p);
 }
 
 
