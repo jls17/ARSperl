@@ -357,9 +357,24 @@ typedef void *(*ARS_fn)(ARControlStruct *ctrl, void *b);
 #ifdef WIN32
 typedef void *(*FUNC_ARAPI_MALLOC)(size_t size);
 typedef void  (*FUNC_ARAPI_FREE)(void *ptr);
+typedef FILE *(*FUNC_ARAPI_FOPEN)(const char *filename, const char *mode);
+typedef int   (*FUNC_ARAPI_FCLOSE)(FILE *stream);
 
 EXTERN FUNC_ARAPI_MALLOC fnARAPImalloc;
 EXTERN FUNC_ARAPI_FREE fnARAPIfree;
+EXTERN FUNC_ARAPI_FOPEN fnARAPIfopen;
+EXTERN FUNC_ARAPI_FCLOSE fnARAPIfclose;
+
+#define ARAPI_FOPEN fnARAPIfopen
+#define ARAPI_FCLOSE fnARAPIfclose
+#endif
+
+#ifdef WIN32
+#define OUR_FOPEN ARAPI_FOPEN
+#define OUR_FCLOSE ARAPI_FCLOSE
+#else
+#define OUR_FOPEN fopen
+#define OUR_FCLOSE fclose
 #endif
 
 EXTERN FILE* get_logging_file_ptr();

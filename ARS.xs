@@ -7559,12 +7559,12 @@ ars_SetLogging( ctrl, logTypeMask_arg, ...)
 			fileName = SvPV(ST(2),len);
 
 			if( logFilePtr != NULL ){
-				fclose( logFilePtr );
+				OUR_FCLOSE(logFilePtr);
 				logFilePtr = NULL;
 			}
 
 			whereToWriteMask = AR_WRITE_TO_FILE;
-			logFilePtr = fopen( fileName, "a" );
+			logFilePtr = OUR_FOPEN(fileName, "a");
 
 			if( logFilePtr == NULL ){
 				char buf[2048];
@@ -7580,7 +7580,7 @@ ars_SetLogging( ctrl, logTypeMask_arg, ...)
 		ret = ARSetLogging( ctrl, logTypeMask, whereToWriteMask, logFilePtr, &status );
 
 		if( logTypeMask == 0 && logFilePtr != NULL ){
-			fclose( logFilePtr );
+			OUR_FCLOSE(logFilePtr);
 			set_logging_file_ptr( NULL );
 		}
 

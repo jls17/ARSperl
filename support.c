@@ -46,6 +46,8 @@ $header: /u1/project/ARSperl/ARSperl/RCS/support.c,v 1.25 1999/01/04 21:04:27 jc
 #ifdef WIN32
 FUNC_ARAPI_MALLOC fnARAPImalloc;
 FUNC_ARAPI_FREE fnARAPIfree;
+FUNC_ARAPI_FOPEN fnARAPIfopen;
+FUNC_ARAPI_FCLOSE fnARAPIfclose;
 #endif
 
 int
@@ -5035,10 +5037,7 @@ void arsperl_FreeARTextString(char* buf)
 #ifdef WIN32
 void InitARAPIMemoryFunctions()
 {
-	// just as a workarround, till we have changed Makefile.PL
-	#define ARAPIx64
-
-	#ifdef ARAPIx64
+	#ifdef WIN64
 	#define ARAPI_C_RUNTIME "msvcr90"
 	#else
 	#define ARAPI_C_RUNTIME "msvcr71"
@@ -5057,6 +5056,8 @@ void InitARAPIMemoryFunctions()
 
 	fnARAPImalloc = (FUNC_ARAPI_MALLOC)GetProcAddress(rt, "malloc");
 	fnARAPIfree = (FUNC_ARAPI_FREE)GetProcAddress(rt, "free");
+	fnARAPIfopen = (FUNC_ARAPI_FOPEN)GetProcAddress(rt, "fopen");
+	fnARAPIfclose = (FUNC_ARAPI_FCLOSE)GetProcAddress(rt, "fclose");
 
 	if (!fnARAPImalloc)
 	{
@@ -5065,6 +5066,14 @@ void InitARAPIMemoryFunctions()
 	if (!fnARAPImalloc)
 	{
 		fprintf(stderr, "Failed to get ARAPI-free function: %d\n", GetLastError());
+	}
+	if (!fnARAPIfopen)
+	{
+		fprintf(stderr, "Failed to get ARAPI-fopen function: %d\n", GetLastError());
+	}
+	if (!fnARAPIfclose)
+	{
+		fprintf(stderr, "Failed to get ARAPI-fclose function: %d\n", GetLastError());
 	}
 
 	if (!fnARAPImalloc || !fnARAPIfree)
