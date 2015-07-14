@@ -82,12 +82,18 @@ while(<>) {
 			$ct += 4;
 		}elsif( $apiVersion >= 17 && $ct == 339 ){
 			$ct += 2;
-		}elsif( $apiVersion >= 20 && $ct == 358 ){
+		}elsif( $apiVersion == 20 && $ct == 358 ){
 			$ct += 22;
-		}elsif( $apiVersion >= 20 && $ct == 384 ){
+		}elsif( $apiVersion >= 21 && $ct == 358 ){
+			$ct += 16;
+		}elsif( $apiVersion == 20 && $ct == 384 ){
 			$ct += 2;
-		}elsif( $apiVersion >= 20 && $ct == 398 ){
+		}elsif( $apiVersion >= 21 && $ct == 385 ){
+			$ct += 8;
+		}elsif( $apiVersion == 20 && $ct == 398 ){
 			$ct += 3;
+		}elsif( $apiVersion >= 21 && $ct == 401 ){
+			$ct += 16;
 		}else{
 			++$ct;
 		}
@@ -147,6 +153,18 @@ while(<>) {
 		$sit = "int" if $sin eq "AR_SERVER_INFO_MFS_KEYWORDS_FIELD_WEIGHT";      # 329
 
 		$sit = "int" if $sin eq "AR_SERVER_INFO_OVERLAY_MODE";                   # 341
+
+		$sit = "bitmask" if $sin eq "AR_SERVER_INFO_STATS_APISQL_CONTROL";       # 384
+
+		$sit = "int" if $sin eq "AR_SERVER_INFO_ENC_WORKFLOW_DATA_ENC_ALG";      # 417
+		$sit = "int" if $sin eq "AR_SERVER_INFO_AUTH_TOKEN_SIGNATURE_SALT";      # 418
+		$sit = "int" if $sin eq "AR_SERVER_INFO_DISABLE_ARCHIVE_GLOBAL";         # 419
+		$sit = "int" if $sin eq "AR_SERVER_INFO_LARGE_RESULT_LOGGING_THRESHOLD"; # 420
+		$sit = "int" if $sin eq "AR_SERVER_INFO_DISABLE_ESCALATIONS_GLOBAL";     # 422
+		$sit = "int" if $sin eq "AR_SERVER_INFO_DISABLE_ADMIN_OPERATIONS_GLOBAL";# 423
+
+		$sit = "char" if $sin eq "AR_SERVER_INFO_WS_FILTERAPI_WSSE_NO_MUSTUNDERSTAND_ENDPOINTS"; # 425
+		$sit = "char" if $sin eq "AR_SERVER_INFO_DEV_STUDIO_THREEWAY_RECON_PACKINGLIST"; # 426
 
 		#print "\t/*$sin [$siv] is an $sit*/\n";
 

@@ -881,26 +881,28 @@ sub ARS_VERSION_763 { 17; }
 sub ARS_VERSION_764 { 18; }
 sub ARS_VERSION_80  { 19; }
 sub ARS_VERSION_81  { 20; }
+sub ARS_VERSION_90  { 21; }
 ## @Devs: set the following constant always to the latest version supported by ARSPerl
-sub ARS_MAX_API { ARS_VERSION_81; }
+sub ARS_MAX_API { ARS_VERSION_90; }
 
 sub ARSVersionString {
 	my $APIVersionID = shift;
 	my $api2Version = {
-		&ARS_VERSION_45 => '4.5',
-		&ARS_VERSION_50 => '5.0',
-		&ARS_VERSION_51 => '5.1',
-		&ARS_VERSION_60 => '6.0',
-		&ARS_VERSION_63 => '6.3',
-		&ARS_VERSION_70 => '7.0',
-		&ARS_VERSION_71 => '7.1',
-		&ARS_VERSION_75 => '7.5',
+		&ARS_VERSION_45  => '4.5',
+		&ARS_VERSION_50  => '5.0',
+		&ARS_VERSION_51  => '5.1',
+		&ARS_VERSION_60  => '6.0',
+		&ARS_VERSION_63  => '6.3',
+		&ARS_VERSION_70  => '7.0',
+		&ARS_VERSION_71  => '7.1',
+		&ARS_VERSION_75  => '7.5',
 		&ARS_VERSION_760 => '7.6',
 		&ARS_VERSION_762 => '7.6',
 		&ARS_VERSION_763 => '7.6.03',
 		&ARS_VERSION_764 => '7.6.04',
-		&ARS_VERSION_80 => '8.0',
-		&ARS_VERSION_81 => '8.1',
+		&ARS_VERSION_80  => '8.0',
+		&ARS_VERSION_81  => '8.1',
+		&ARS_VERSION_90  => '9.0',
 	};
 	if ($APIVersionID > ARS_MAX_API) { return "Unsupported API-Version: (using " . $api2Version{ARS_MAX_API} . ")"; }
 	if (!$APIVersionID || $APIVersionID < ARS_VERSION_45) { return "Unsupported API version!"; }

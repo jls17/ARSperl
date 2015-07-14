@@ -2100,6 +2100,9 @@ ars_GetSchema(ctrl,name)
 #if AR_EXPORT_VERSION >= 9L
                             &auditInfo,
 #endif
+#if AR_CURRENT_API_VERSION >= 21
+			    NULL, //ARAssociationsToFollowInfoStruct*
+#endif
 			    defaultVui,
 			    &helpText, &timestamp, owner, 
 			    lastChanged, &changeDiary, 
@@ -4932,6 +4935,9 @@ ars_CreateSchema( ctrl, schemaDefRef )
 #if AR_EXPORT_VERSION >= 9L
 				auditInfo,
 #endif
+#if AR_CURRENT_API_VERSION >= 21
+				NULL, //ARAssociationsToFollowInfoStruct*
+#endif
 				defaultVui,
 				helpText,
 				owner,
@@ -5127,6 +5133,9 @@ ars_SetSchema( ctrl, name, schemaDefRef )
 #endif
 #if AR_EXPORT_VERSION >= 9L
 				auditInfo,
+#endif
+#if AR_CURRENT_API_VERSION >= 21
+				NULL, // ARAssociationsToFollowInfoStruct*
 #endif
 				defaultVuiPtr,
 				helpText,
