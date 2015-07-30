@@ -202,15 +202,12 @@ __ars_init()
 #endif
 	}
 
-void
-__init()
-	CODE :
+BOOT:
 	{
 #ifdef WIN32
 		InitARAPIMemoryFunctions();
 #endif
 	}
-
 
 int
 ars_APIVersion()
@@ -295,7 +292,7 @@ ars_Login(server, username, password, lang=NULL, authString=NULL, tcpport=0, rpc
 		((ars_ctrl *)ctrl)->endTime = 0;
 #else
 		DBG( ("safemalloc ARControlStruct\n") );
-		ctrl = (ARControlStruct *)safemalloc(sizeof(ARControlStruct));
+		ctrl = (ARControlStruct *)MALLOCNN(sizeof(ARControlStruct));
 		/* DBG( ("malloc ARControlStruct\n") );
 		ctrl = (ARControlStruct *)MALLOCNN(sizeof(ARControlStruct)); */
 		Zero(ctrl, 1, ARControlStruct);
@@ -459,11 +456,7 @@ ars_Login(server, username, password, lang=NULL, authString=NULL, tcpport=0, rpc
 			DBG( ("ARVerifyUser failed %d\n", ret) );
 			ARTermination(ctrl, &status);
 			ARError(ret, status);
-#ifdef PROFILE
 			AP_FREE(ctrl); /* invalid, cleanup */
-#else
-			safefree(ctrl);
-#endif
 			RETVAL = NULL;
 	  	} else {
 	  		RETVAL = ctrl; /* valid, return ctrl struct */
@@ -8252,11 +8245,7 @@ DESTROY(ctrl)
 		rv = ARTermination(&status);
 # endif /* AR_EXPORT_VERSION */
 		(void) ARError(rv, status);
-#ifdef PROFILE
 		AP_FREE(ctrl);
-#else
-		safefree(ctrl);
-#endif
 	}
 
 

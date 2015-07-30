@@ -5042,46 +5042,100 @@ void InitARAPIMemoryFunctions()
 	#else
 	#define ARAPI_C_RUNTIME "msvcr71"
 	#endif
-	HMODULE rt;
+	HMODULE         rt;
+	ACTCTX          activationContext;
+	HANDLE          arapiContext;
+	ULONG_PTR       cookie = 0;
 
-	//printf("__InitARAPIMemoryFunctions\n");
-	rt = GetModuleHandle(ARAPI_C_RUNTIME);
-	//printf("after:GetModuleHanlde\n");
+	Zero(&activationContext, 1, ACTCTX);
+
+	GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCTSTR)ARInitialization, &rt);
+
+	if (rt != NULL)
+	{
+		activationContext.cbSize = sizeof(ACTCTX);
+		activationContext.dwFlags = ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_HMODULE_VALID;
+		activationContext.lpResourceName = MAKEINTRESOURCE(2);
+		activationContext.hModule = rt;
+
+		arapiContext = CreateActCtx(&activationContext);
+		if (arapiContext != INVALID_HANDLE_VALUE)
+		{
+			if (ActivateActCtx(arapiContext, &cookie)) {
+				//printf("Context activated!\n");
+			}
+			else {
+				printf("Failed to activate arapi context!\n");
+			}
+		}
+		else
+		{
+			printf("Failed to create arapi activation context: error %d\n", GetLastError());
+		}
+	}
+
+	rt = GetModuleHandleA(ARAPI_C_RUNTIME);
+
 	if (rt == NULL)
 	{
-		printf("Failed to load ARAPI c-runtime! Module %s not found.\n", ARAPI_C_RUNTIME);
-		return;
+		printf("Failed to load ARAPI c-runtime! Module %s not found. Error %d\n", ARAPI_C_RUNTIME, GetLastError());
 	}
-	//printf("found module %lx\n", rt);
+	else
+	{
+		fnARAPImalloc = (FUNC_ARAPI_MALLOC)GetProcAddress(rt, "malloc");
+		fnARAPIfree = (FUNC_ARAPI_FREE)GetProcAddress(rt, "free");
+		fnARAPIfopen = (FUNC_ARAPI_FOPEN)GetProcAddress(rt, "fopen");
+		fnARAPIfclose = (FUNC_ARAPI_FCLOSE)GetProcAddress(rt, "fclose");
 
-	fnARAPImalloc = (FUNC_ARAPI_MALLOC)GetProcAddress(rt, "malloc");
-	fnARAPIfree = (FUNC_ARAPI_FREE)GetProcAddress(rt, "free");
-	fnARAPIfopen = (FUNC_ARAPI_FOPEN)GetProcAddress(rt, "fopen");
-	fnARAPIfclose = (FUNC_ARAPI_FCLOSE)GetProcAddress(rt, "fclose");
-
-	if (!fnARAPImalloc)
-	{
-		fprintf(stderr, "Failed to get ARAPI-malloc function: %d\n", GetLastError());
-	}
-	if (!fnARAPImalloc)
-	{
-		fprintf(stderr, "Failed to get ARAPI-free function: %d\n", GetLastError());
-	}
-	if (!fnARAPIfopen)
-	{
-		fprintf(stderr, "Failed to get ARAPI-fopen function: %d\n", GetLastError());
-	}
-	if (!fnARAPIfclose)
-	{
-		fprintf(stderr, "Failed to get ARAPI-fclose function: %d\n", GetLastError());
+		if (!fnARAPImalloc)
+		{
+			fprintf(stderr, "Failed to get ARAPI-malloc function: %d\n", GetLastError());
+		}
+		if (!fnARAPImalloc)
+		{
+			fprintf(stderr, "Failed to get ARAPI-free function: %d\n", GetLastError());
+		}
+		if (!fnARAPIfopen)
+		{
+			fprintf(stderr, "Failed to get ARAPI-fopen function: %d\n", GetLastError());
+		}
+		if (!fnARAPIfclose)
+		{
+			fprintf(stderr, "Failed to get ARAPI-fclose function: %d\n", GetLastError());
+		}
 	}
 
 	if (!fnARAPImalloc || !fnARAPIfree)
 	{
+#ifdef malloc
+#undef malloc
+#undef free
+#endif
 		// we can't mix malloc/free calls to different c-runtimes, so if we cant get the address of 
 		// any of the functions, we set both to perl internal functions
-		fnARAPImalloc = safemalloc;
-		fnARAPIfree = safefree;
+		fnARAPImalloc = malloc;
+		fnARAPIfree = free;
+	}
+	if (!fnARAPIfopen || !fnARAPIfclose)
+	{
+#ifdef fopen
+#undef fopen
+#undef fclose
+#endif
+		fnARAPIfopen = fopen;
+		fnARAPIfclose = fclose;
+	}
+
+	if (cookie)
+	{
+		if (DeactivateActCtx(0, cookie))
+		{
+			//printf("Successfully deactivated arapi activation context!\n");
+		}
+		else
+		{
+			printf("Failed to deactivate arapi activation context!\n");
+		}
 	}
 
 	/* Testcode to verify it is working! */

@@ -38,6 +38,11 @@ $Header: /cvsroot/arsperl/ARSperl/support-h.template,v 1.37 2010/09/01 17:18:29 
 # define EXTERN 
 #endif
 
+#ifdef WIN32
+// we need this to have all the symbols available for the function "InitARAPIMemoryFunctions" in support.c available
+#define _WIN32_WINNT 0x0501
+#endif
+
 #include "ar.h"
 #include "arerrno.h"
 #include "arextern.h"
